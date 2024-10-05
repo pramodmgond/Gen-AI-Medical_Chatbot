@@ -1,17 +1,17 @@
 from flask import Flask, render_template, jsonify, request
 from src.helper import download_hugging_face_embeddings
 from langchain_pinecone import PineconeVectorStore
-from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
+from dotenv import load_dotenv
 from src.prompt import *
 import os
-from langchain.vectorstores import Pinecone
-import pinecone
-from langchain.prompts import PromptTemplate
-from langchain.llms import CTransformers
+from pinecone.grpc import PineconeGRPC as Pinecone
+from pinecone import ServerlessSpec
+from langchain_pinecone import PineconeVectorStore
 from langchain.chains import RetrievalQA
-from dotenv import load_dotenv
+from langchain_core.prompts import PromptTemplate
+from langchain_community.llms import CTransformers
+
 
 app = Flask(__name__)
 
@@ -26,9 +26,11 @@ embeddings = download_hugging_face_embeddings()
 
 index_name = "medicalchatbot"
 
-#Loading the index
-docsearch=Pinecone.from_existing_index(index_name, embeddings)
-
+# Embed each chunk and upsert the embeddings into your Pinecone index.
+docsearch = PineconeVectorStore.from_existing_index(
+    index_name=index_name,
+    embedding=embeddings
+)
 
 PROMPT=PromptTemplate(template=prompt_template, input_variables=["context", "question"])
 
@@ -60,9 +62,10 @@ def chat():
     msg = request.form["msg"]
     input = msg
     print(input)
-    result=qa({"query": input})
-    print("Response : ", result["result"])
-    return str(result["result"])
+    response = qa.invoke({"query": input})
+
+    print("Response : ", response["answer"])
+    return str(response["answer"])
 
 
 

@@ -1,5 +1,6 @@
 # Gen-AI-Medical_Chatbot-Llama2
 
+![alt text](image.png)
 
 # How to run?
 ### STEPS:
